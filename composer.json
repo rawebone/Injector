@@ -1,0 +1,22 @@
+{
+    "name": "rawebone/injector",
+    "description": "A library providing a low level service injection API",
+    "minimum-stability": "stable",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nick Rawe",
+            "email": "rawebone@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "Rawebone\\Injector\\": [ "library/" ],
+            "": [ "spec/" ]
+        },
+        "files": [ "library/Rawebone/Injector/singleton.php" ]
+    },
+    "require-dev": {
+        "phpspec/phpspec": "2.0.0"
+    }
+}
