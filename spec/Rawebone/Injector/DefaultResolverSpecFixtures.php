@@ -2,7 +2,7 @@
 
 function serviceA()
 {
-
+    return new \stdClass();
 }
 
 class ServiceB
