@@ -9,7 +9,7 @@ function injector($serviceOrKill = null)
     }
 
     if ($inst === null) {
-        // Build instance here
+        $inst = new \Rawebone\Injector\Injector();
     }
 
     if (is_string($serviceOrKill)) {
