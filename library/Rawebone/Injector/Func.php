@@ -10,25 +10,35 @@ namespace Rawebone\Injector;
 class Func
 {
     protected $subject;
+    protected $reflection;
 
     public function __construct($subject)
     {
         $this->subject = $subject;
+        $this->reflection();
     }
 
     public function reflection()
     {
+        if ($this->reflection) {
+            return $this->reflection;
+        }
+
+        $ref = null;
+
         if ($this->isFunction()) {
-            return new \ReflectionFunction($this->subject);
+            $ref = new \ReflectionFunction($this->subject);
         } else if ($this->isInvokable()) {
-            return new \ReflectionMethod($this->subject, "__invoke");
+            $ref = new \ReflectionMethod($this->subject, "__invoke");
         } else if ($this->isArrayCallback()) {
-            return new \ReflectionMethod($this->subject[0], $this->subject[1]);
+            $ref = new \ReflectionMethod($this->subject[0], $this->subject[1]);
         } else if ($this->isConstructable()) {
-            return new \ReflectionMethod($this->subject, "__construct");
+            $ref = new \ReflectionMethod($this->subject, "__construct");
         } else {
             throw new \ErrorException("Could not get a reflection for invalid function");
         }
+
+        return $this->reflection = $ref;
     }
 
     public function invoke(array $args)

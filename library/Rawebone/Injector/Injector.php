@@ -83,7 +83,6 @@ class Injector
 
         $args = array();
         foreach ($params as $param) {
-
             $name = $param["name"];
             $inst = $this->tryService($name);
 

@@ -39,9 +39,7 @@ class DefaultResolver implements ResolverInterface
 
         foreach ($names as $name) {
             try {
-                $func = new Func($name);
-                $func->reflection(); // Validate that the instance can be handled
-                return $func;
+                return new Func($name);
 
             } catch (\ErrorException $ex) {}
         }
