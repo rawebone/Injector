@@ -88,16 +88,14 @@ class Injector
             $inst = $this->tryService($name);
 
             if (!$inst && $param["hasDefault"]) {
-                $inst = $param["default"];
+                $args[$name] = $param["default"];
+            } else if ($inst && !$param["type"]) {
+                $args[$name] = $inst;
             } else if ($inst && $param["type"] && !$this->checker->validate($param["type"], $inst)) {
-                throw new ResolutionException("Parameter type is not compatible with service '$name'");
-            }
-
-            if (!$inst) {
+                throw new ResolutionException("Parameter type '{$param["type"]}' is not compatible with service '$name'");
+            } else {
                 throw new ResolutionException("Could not resolve parameter '$name'");
             }
-
-            $args[$name] = $inst;
         }
 
         return $args;
