@@ -2,110 +2,89 @@
 
 Injector provides a low level service injection system partly influenced by
 that found in [AngularJS](https://angularjs.org). The idea is somewhat
-similar to dependency injection, although it actually injects services.
-Consider an example with [Pimple](https://github.com/fabpot/pimple):
+similar to dependency injection although it actually injects services -
+the difference between the two is nuanced but loosely: DI works based on
+types, overriding on a per class definition whereas services work on names.
+
+For example, in a DI scenario these two log instances will be the same
+(without some other configuration):
 
 ```php
-<?php
 
-$container = new Pimple();
-$container["service"] = function () { return new \stdClass(); };
-$container["consumer"] = function () use ($container) { return new myService($container["service"]); };
+use Psr\Log\LoggerInterface;
 
-$container["consumer"]->blah();
-
-```
-
-So, we have service location but we have to do all of the configuration ourselves.
-While this isn't so bad it gets more tricky when we want to do something like:
-
-```php
-<?php
-
-$func = function (myService $service)
+interface Injectable
 {
-    return $service->blah();
-};
-
-```
-
-How do we know what services are required? You can use a full DI solution for
-this, however that also requires a lot of configuration either with meta data
-or manual coding like in the first example to specify what constitutes a
-dependency.
-
-Then there are other problems - you have to really tie into a solution to get
-any benefit, some systems require major architectural underpinnings etc.
-
-So what this library provides is an alternate solution. It provides an API
-for working with functions as units that can be injected into and provides
-a linker to match service names, based on the parameter names, to enable
-injection or retrieval for higher level processing.
-
-As such, we can rewrite the above code examples as:
-
-```php
-
-function service()
-{
-    return new \stdClass();
+    function __construct(LoggerInterface $logA, LoggerInterface $logB);
 }
 
-function consumer(\stdClass $service)
-{
-    return new myService($service);
-}
-
-$func = function (myService $consumer)
-{
-    $consumer->blah();
-};
-
-echo injector()->inject($func), PHP_EOL; // The result of blah
-
 ```
 
-This is, too my mind, a much more natural way of working. But we are
-not limited to just injecting the dependencies - they can be returned
-by a call to `argsFor($func)` - or we can resolve the service we want
-by `injector("service")`. As such, this can provide the foundation
-for higher level functionality or be used. Resolution of services
-can also be customised to your applications requirements by specifying
-a `Resolver`.
+While DI and configuration of this kind is useful in very large applications
+for smaller more concise applications the cost of implementation is higher
+as it is normally more complex. As such in these smaller applications, SL
+can normally wield more of a benefit as you still get lazy loading of instances
+and the ability to easily change a definition.
 
-Resolvers take a single parameter - the service name - and should return
-a `Func` object. For example you could define a custom Resolver for your
-project like:
+However traditional SL systems have a drawback in that they work on a pull
+system:
 
 ```php
-<?php
 
-class MyResolver implements \Rawebone\Injector\ResolverInterface
-{
-    public function resolve($name)
-    {
-        $method = "getService" . ucfirst($name);
-        if (!method_exists($this, $method)) {
-            throw new \Rawebone\Injector\ResolutionException($name);
-        }
+$container["logA"] = function ($container) { return new MyLogger($container["fileA"]); };
+$container["logB"] = function ($container) { return new MyOtherLogger($container["fileB"]); };
 
-        return new \Rawebone\Injector\Func(array($this, $method));
-    }
-
-    public function getServiceService()
-    {
-        return new \stdClass();
-    }
-
-    public function getServiceConsumer(\stdClass $service)
-    {
-        return new myService($service);
-    }
-}
-
-injector()->resolve(new MyResolver());
+$container["logB"]->warning("blah");
 
 ```
 
-And the earlier example will work in exactly the same way.
+As such your application, in addition to some  syntax and bloat from the DSL,
+will also not be as succinct (in my humble opinion).
 
+This library provides a low level mechanism for injecting services into instances
+to clear some of the bloat, in addition to some low level utilities for working
+with functions and function signatures.
+
+## The Injector Approach
+
+```php
+
+use Rawebone\Injector\Injector;
+
+$injector = new Injector();
+
+// By default, the injector will resolve to any callable
+// with the name given as a broad brush approach:
+function my_service()
+{
+    return new stdClass();
+}
+
+// Injection can be handled automatically by passing through
+// a callable to the library
+
+$injector->inject(function ($my_service)
+{
+    var_dump($my_service); // stdClass
+});
+
+// Injection can be handled manually by returning the service by name:
+
+$my_service = $injector->service("my_service");
+
+// Or simply getting arguments for the callable:
+
+$args = $injector->argsFor(function ($my_service) {});
+var_dump($args); // array("my_service" => stdClass);
+
+
+```
+
+As stated, the "resolve anything callable to a service name" is a broad brush
+tactic but it doesn't give us what we normally want. As such implementers can
+specify their own behaviour by implementing the `Rawebone\Injector\ResolverInterface`
+which takes in a service name and returns a value to be injected.
+
+## License
+
+MIT, please see the [included document](LICENSE) for details.
