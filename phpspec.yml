@@ -1,3 +1,5 @@
 suites:
   injector_suite:
     src_path: library/
+    namespace: Rawebone\Injector\
+    psr4_prefix: Rawebone\Injector\
