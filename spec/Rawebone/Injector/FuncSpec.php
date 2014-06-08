@@ -7,9 +7,14 @@ use Prophecy\Argument;
 
 class FuncSpec extends ObjectBehavior
 {
-    function it_is_initializable()
+    function it_should_throw_an_exception_if_invalid_argument_passed()
     {
-        $this->beConstructedWith("");
+        try {
+            // This will fail as it is an invalid function
+            $this->beConstructedWith("");
+        } catch (\ReflectionException $ex) {
+        }
+
         $this->shouldHaveType('Rawebone\Injector\Func');
     }
 
@@ -48,12 +53,6 @@ class FuncSpec extends ObjectBehavior
             ->shouldReturnAnInstanceOf('ReflectionMethod');
     }
 
-    function it_should_throw_exception_if_no_reflection_possible()
-    {
-        $this->beConstructedWith(null);
-        $this->shouldThrow('ErrorException')->during('reflection');
-    }
-
     function it_should_invoke_for_a_function()
     {
         $this->beConstructedWith(__NAMESPACE__ . '\test');
@@ -83,12 +82,6 @@ class FuncSpec extends ObjectBehavior
         $cls = __NAMESPACE__ . '\Constructable';
         $this->beConstructedWith($cls);
         $this->invoke(array("ABC"))->shouldReturnAnInstanceOf($cls);
-    }
-
-    function it_should_throw_exception_if_invokation_not_possible()
-    {
-        $this->beConstructedWith(null);
-        $this->shouldThrow('ErrorException')->during('invoke', array(array()));
     }
 }
 
