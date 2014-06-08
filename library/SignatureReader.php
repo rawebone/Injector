@@ -4,17 +4,23 @@ namespace Rawebone\Injector;
 
 class SignatureReader
 {
+    /**
+     * @param Func $function
+     * @return SignatureData[]
+     */
     public function read(Func $function)
     {
         $params = array();
 
         foreach ($function->reflection()->getParameters() as $param) {
-            $params[] = array(
-                "name" => $param->getName(),
-                "type" => $this->getType($param),
-                "default" => $this->getDefault($param),
-                "hasDefault" => $param->isOptional()
-            );
+            $data = new SignatureData();
+
+            $data->name = $param->getName();
+            $data->type = $this->getType($param);
+            $data->default = $this->getDefault($param);
+            $data->hasDefault = $param->isOptional();
+
+            $params[] = $data;
         }
 
         return $params;

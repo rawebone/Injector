@@ -8,6 +8,13 @@ use Rawebone\Injector\ResolverInterface;
 
 class InjectorSpec extends ObjectBehavior
 {
+    function let()
+    {
+        if (!class_exists("serviceA")) {
+            require_once __DIR__ . "/DefaultResolverSpecFixtures.php";
+        }
+    }
+
     function it_is_initializable()
     {
         $this->shouldHaveType('Rawebone\Injector\Injector');
