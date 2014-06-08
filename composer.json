@@ -11,12 +11,13 @@
     ],
     "autoload": {
         "psr-0": {
-            "Rawebone\\Injector\\": [ "library/" ],
             "": [ "spec/" ]
         },
-        "files": [ "library/Rawebone/Injector/singleton.php" ]
+        "psr-4": {
+            "Rawebone\\Injector\\": [ "library/" ]
+        }
     },
     "require-dev": {
-        "phpspec/phpspec": "2.0.0"
+        "phpspec/phpspec": "2.1.x-dev"
     }
 }
