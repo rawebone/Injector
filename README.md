@@ -85,6 +85,26 @@ tactic but it doesn't give us what we normally want. As such implementers can
 specify their own behaviour by implementing the `Rawebone\Injector\ResolverInterface`
 which takes in a service name and returns a value to be injected.
 
+The library also provides a more common solution to the problem through
+the `Rawebone\Injector\RegisterResolver`:
+
+```php
+<?php
+
+$resolver = new Rawebone\Injector\RegisterResolver();
+$resolver->register("serviceA", function () { return new MyService(); });
+$resolver->register("serviceB", new \stdClass());
+
+$resolver->registerMany(array(
+    "serviceC" => new \stdClass(),
+    "serviceD" => function () { return new MyService(); }
+));
+
+$injector->resolver($resolver);
+
+```
+
+
 ## License
 
 MIT, please see the [included document](LICENSE) for details.
