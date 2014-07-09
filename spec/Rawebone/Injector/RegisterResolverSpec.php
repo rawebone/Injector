@@ -25,14 +25,7 @@ class RegisterResolverSpec extends ObjectBehavior
 		$this->resolve("serviceA")->shouldReturnAnInstanceOf('Rawebone\Injector\Func');
 	}
 
-	function it_should_return_a_service_after_registration_of_an_object_instance()
-	{
-		$this->register("serviceA", new \stdClass());
-
-		$this->resolve("serviceA")->shouldReturnAnInstanceOf('Rawebone\Injector\Func');
-	}
-
-	function it_should_fail_to_register_if_not_object_or_callable()
+	function it_should_fail_to_register_if_not_callable()
 	{
 		$this->shouldThrow('Rawebone\Injector\ResolutionException')
 			 ->during("register", array("serviceA", "a"));
@@ -41,7 +34,7 @@ class RegisterResolverSpec extends ObjectBehavior
 	function it_should_register_many()
 	{
 		$this->registerMany(array(
-			"serviceA" => new \stdClass(),
+			"serviceA" => function () { },
 			"serviceB" => function () { }
 		));
 

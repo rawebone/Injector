@@ -19,30 +19,23 @@ class RegisterResolver implements ResolverInterface
 			throw new ResolutionException("Could not resolve service '$service'");
 		}
 
-		return $this->services[$service];
+		return new Func($this->services[$service]);
 	}
 
 	/**
-	 * Registers a service by name into the resolver. $callable
-	 * can be an object instance, in which case it will be wrapped.
+	 * Registers a service by name into the resolver.
 	 *
 	 * @param string $service
-	 * @param callable|object $callable
+	 * @param callable $callable
 	 * @throws ResolutionException
 	 */
 	public function register($service, $callable)
     {
-		$realCallable = null;
-
-		if (!is_callable($callable) && is_object($callable)) {
-			$realCallable = function () use ($callable) { return $callable; };
-		} else if (is_callable($callable)) {
-			$realCallable = $callable;
-		} else {
+		if (!is_callable($callable)) {
 			throw new ResolutionException("Service '$service' cannot be register as it's value is invalid");
 		}
 
-        $this->services[$service] = new Func($realCallable);
+		$this->services[$service] = $callable;
     }
 
 	/**
