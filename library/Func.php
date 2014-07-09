@@ -4,76 +4,133 @@ namespace Rawebone\Injector;
 
 /**
  * Func represents any callable function in the PHP language, allowing for
- * reflection and invokation. This allows the Injector to have the maximum
+ * reflection and invocation. This allows the Injector to have the maximum
  * range when injecting services.
+ *
+ * Our strategy here is to be as lazy as possible about what type of subject
+ * we have until we absolutely need it, preventing some fairly weighty calls
+ * to is_* functions. Even when we do, to prevent having to do more work again,
+ * we break down the reflection generation and function invocation handling
+ * into their own methods which are then dynamically referenced. Still, we
+ * only do this when absolutely necessary to ensure the most efficient performance.
  */
 class Func
 {
     protected $subject;
     protected $reflection;
+	protected $reflectionFunction;
+	protected $invokeFunction;
+	protected $type;
 
     public function __construct($subject)
     {
         $this->subject = $subject;
-        $this->reflection();
+
+		// This check helps to cover off most cases quickly
+		if (!is_callable($subject, true)) {
+			throw new \ErrorException("Subject is not a valid callable");
+		}
     }
 
     public function reflection()
     {
-        if ($this->reflection) {
-            return $this->reflection;
-        }
+		$this->lazyInit();
 
-        $ref = null;
+        if (!$this->reflection) {
+			$func = $this->reflectionFunction;
+			$this->reflection = $this->$func();
+		}
 
-        if ($this->isFunction()) {
-            $ref = new \ReflectionFunction($this->subject);
-        } else if ($this->isInvokable()) {
-            $ref = new \ReflectionMethod($this->subject, "__invoke");
-        } else if ($this->isArrayCallback()) {
-            $ref = new \ReflectionMethod($this->subject[0], $this->subject[1]);
-        } else if ($this->isConstructable()) {
-            $ref = new \ReflectionMethod($this->subject, "__construct");
-        } else {
-            throw new \ErrorException("Could not get a reflection for invalid function");
-        }
-
-        return $this->reflection = $ref;
+		return $this->reflection;
     }
 
     public function invoke(array $args)
     {
-        if ($this->isFunction()) {
-            return $this->reflection()->invokeArgs($args);
-        } else if ($this->isInvokable()) {
-            return $this->reflection()->invokeArgs($this->subject, $args);
-        } else if ($this->isArrayCallback()) {
-            return $this->reflection()->invokeArgs($this->subject[0], $args);
-        } else if ($this->isConstructable()) {
-            return $this->reflection()->getDeclaringClass()->newInstanceArgs($args);
-        } else {
-            throw new \ErrorException("Could not get a reflection for invalid function");
-        }
+        $this->lazyInit();
+
+		$func = $this->invokeFunction;
+		return $this->$func($args);
     }
 
-    protected function isFunction()
-    {
-        return ($this->subject instanceof \Closure
-                || is_string($this->subject) && function_exists($this->subject));
-    }
+	public function type()
+	{
+		if ($this->type) {
+			return $this->type;
+		}
 
-    protected function isInvokable()
-    {
-        return is_object($this->subject) && method_exists($this->subject, "__invoke");
-    }
+		return $this->type = CallableType::create()->type($this->subject);
+	}
 
-    protected function isArrayCallback()
-    {
-        return is_array($this->subject) && is_callable($this->subject);
-    }
+	protected function lazyInit()
+	{
+		if ($this->reflectionFunction) {
+			return;
+		}
 
-    protected function isConstructable()
-    {
-        return is_string($this->subject) && class_exists($this->subject) && method_exists($this->subject, "__construct");
-    }
+		switch ($this->type()) {
+			case CallableType::TYPE_FUNCTION:
+				$this->reflectionFunction = "reflectionForFunction";
+				$this->invokeFunction = "invokeForFunction";
+				break;
+
+			case CallableType::TYPE_ARRAY:
+				$this->reflectionFunction = "reflectionForArray";
+				$this->invokeFunction = "invokeForArray";
+				break;
+
+			case CallableType::TYPE_INVOKABLE:
+				$this->reflectionFunction = "reflectionForInvokable";
+				$this->invokeFunction = "invokeForInvokable";
+				break;
+
+			case CallableType::TYPE_CONSTRUCTABLE:
+				$this->reflectionFunction = "reflectionForConstructable";
+				$this->invokeFunction = "invokeForConstructable";
+				break;
+
+			default:
+				throw new \ErrorException("Subject is not a valid callable");
+				break;
+		}
+	}
+
+	protected function reflectionForFunction()
+	{
+		return new \ReflectionFunction($this->subject);
+	}
+
+	protected function reflectionForInvokable()
+	{
+		return new \ReflectionMethod($this->subject, "__invoke");
+	}
+
+	protected function reflectionForArray()
+	{
+		return new \ReflectionMethod($this->subject[0], $this->subject[1]);
+	}
+
+	protected function reflectionForConstructable()
+	{
+		return new \ReflectionMethod($this->subject, "__construct");
+	}
+
+	protected function invokeForFunction($args)
+	{
+		return $this->reflection()->invokeArgs($args);
+	}
+
+	protected function invokeForInvokable($args)
+	{
+		return $this->reflection()->invokeArgs($this->subject, $args);
+	}
+
+	protected function invokeForArray($args)
+	{
+		return $this->reflection()->invokeArgs($this->subject[0], $args);
+	}
+
+	protected function invokeForConstructable($args)
+	{
+		return $this->reflection()->getDeclaringClass()->newInstanceArgs($args);
+	}
 }
