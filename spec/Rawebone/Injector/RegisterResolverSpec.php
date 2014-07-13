@@ -42,4 +42,20 @@ class RegisterResolverSpec extends ObjectBehavior
 		$this->resolve("serviceB")->shouldReturnAnInstanceOf('Rawebone\Injector\Func');
 	}
 
+	function it_should_register_and_wrap_an_object()
+	{
+		$cls = new \stdClass();
+		$this->registerObject("serviceA", $cls);
+
+		/** @var \Rawebone\Injector\Func $service */
+		$service = $this->resolve("serviceA");
+		$service->shouldReturnAnInstanceOf('Rawebone\Injector\Func');
+		$service->invoke(array())->shouldReturn($cls);
+	}
+
+	function it_should_fail_to_register_if_not_an_object()
+	{
+		$this->shouldThrow('Rawebone\Injector\ResolutionException')
+			->during("registerObject", array("serviceA", "a"));
+	}
 }

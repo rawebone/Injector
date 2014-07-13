@@ -50,4 +50,20 @@ class RegisterResolver implements ResolverInterface
 			$this->register($service, $callable);
 		}
     }
+
+	/**
+	 * Registers an object with the container.
+	 *
+	 * @param string $service
+	 * @param object $object
+	 * @see register
+	 */
+	public function registerObject($service, $object)
+    {
+		if (!is_object($object)) {
+			throw new ResolutionException("Service '$service' cannot be register as it's value is invalid");
+		}
+
+        $this->services[$service] = function () use ($object) { return $object; };
+    }
 }
